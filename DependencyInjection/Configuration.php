@@ -70,6 +70,11 @@ class Configuration implements ConfigurationInterface
                     ->info('These are raw curl options, see http://php.net/manual/en/function.curl-setopt.php for details.')
                     ->prototype('scalar')->end()
                 ->end()
+                ->arrayNode('webhook')
+                    ->children()
+                        ->scalarNode('signing_key')
+                    ->end()
+                ->end()            
             ->end()
         ;
 
