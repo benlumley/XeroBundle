@@ -2,6 +2,7 @@
 
 namespace FL\XeroBundle\XeroPHP;
 
+use Doctrine\ORM\EntityManager;
 use XeroPHP\Application;
 use XeroPHP\Application\PartnerApplication;
 use XeroPHP\Application\PrivateApplication;
@@ -9,11 +10,6 @@ use XeroPHP\Application\PublicApplication;
 
 class ApplicationFactory
 {
-    const TYPE_PUBLIC = 'public';
-
-    const TYPE_PRIVATE = 'private';
-
-    const TYPE_PARTNER = 'partner';
 
     /**
      * @var string
@@ -28,21 +24,25 @@ class ApplicationFactory
     /**
      * @return Application
      */
-    public function createApplication(string $type, array $config)
+    public function createApplication(array $config, EntityManager $em)
     {
-        $this->type = $type;
         $this->config = $config;
 
-        if ($this->type === static::TYPE_PUBLIC) {
-            return new PublicApplication($this->config);
-        }
+        $provider = new \Calcinai\OAuth2\Client\Provider\Xero([
+                                                                  'clientId'          => $config['oauth']['client_id'],
+                                                                  'clientSecret'      => $config['oauth']['client_secret'],
+                                                                  'redirectUri'       => $config['oauth']['redirect_uri'],
+                                                              ]);
+        $repo = $em->getRepository('App:Oauth2RefreshToken');
+        $refreshToken = $repo->findOneBySlug('xero');
+        $newAccessToken = $provider->getAccessToken('refresh_token', [
+            'refresh_token' => $refreshToken->getToken()
+        ]);
 
-        if ($this->type === static::TYPE_PRIVATE) {
-            return new PrivateApplication($this->config);
-        }
+        $refreshToken->setToken($newAccessToken->getRefreshToken());
+        $em->flush($refreshToken);
+        $tenants = $provider->getTenants($newAccessToken);
 
-        if ($this->type === static::TYPE_PARTNER) {
-            return new PartnerApplication($this->config);
-        }
+        return new Application($newAccessToken->getToken(), $tenants[0]->tenantId);
     }
 }

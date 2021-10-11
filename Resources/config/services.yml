@@ -3,4 +3,4 @@ services:
 
     XeroPHP\Application:
         factory: 'FL\XeroBundle\XeroPHP\ApplicationFactory:createApplication'
-        arguments: ["%fl_xero.type%", "%fl_xero.config%"]
+        arguments: [ "%fl_xero.config%", '@doctrine.orm.entity_manager']

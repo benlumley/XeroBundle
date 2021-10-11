@@ -33,9 +33,6 @@ class FLXeroExtension extends Extension
             }
         }
 
-        $container->setParameter('fl_xero.type', $config['type']);
-        unset($config['type']);
-
         $container->setParameter('fl_xero.config', $config);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));

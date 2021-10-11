@@ -19,14 +19,6 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->enumNode('type')
-                    ->values([
-                        ApplicationFactory::TYPE_PUBLIC,
-                        ApplicationFactory::TYPE_PRIVATE,
-                        ApplicationFactory::TYPE_PARTNER,
-                    ])
-                    ->isRequired()
-                ->end()
                 ->floatNode('core_version')
                     ->info('API versions can be overridden if necessary for some reason.')
                     ->defaultValue('2.0')
@@ -41,28 +33,17 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->arrayNode('oauth')
                     ->children()
-                        ->scalarNode('callback')
+                        ->scalarNode('redirect_uri')
                             ->isRequired()
                             ->cannotBeEmpty()
                         ->end()
-                        ->scalarNode('consumer_key')
+                        ->scalarNode('client_id')
                             ->isRequired()
                             ->cannotBeEmpty()
                         ->end()
-                        ->scalarNode('consumer_secret')
+                        ->scalarNode('client_secret')
                             ->isRequired()
                             ->cannotBeEmpty()
-                        ->end()
-                        ->enumNode('signature_location')
-                            ->info('If you have issues passing the Authorization header, you can set it to append to the query string.')
-                            ->values([Client::SIGN_LOCATION_HEADER, Client::SIGN_LOCATION_QUERY])
-                            ->defaultValue(Client::SIGN_LOCATION_HEADER)
-                        ->end()
-                        ->scalarNode('rsa_private_key')
-                            ->info('For certs on disk or a string - allows anything that is valid with openssl_pkey_get_private.')
-                        ->end()
-                        ->scalarNode('rsa_public_key')
-                            ->info('For certs on disk or a string - allows anything that is valid with openssl_pkey_get_public.')
                         ->end()
                     ->end()
                 ->end()
@@ -74,7 +55,7 @@ class Configuration implements ConfigurationInterface
                     ->children()
                         ->scalarNode('signing_key')
                     ->end()
-                ->end()            
+                ->end()
             ->end()
         ;
 
