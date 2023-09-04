@@ -2,6 +2,7 @@
 
 namespace FL\XeroBundle\XeroPHP;
 
+use Calcinai\OAuth2\Client\Provider\Exception\XeroProviderException;
 use Doctrine\ORM\EntityManager;
 use XeroPHP\Application;
 use XeroPHP\Application\PartnerApplication;
@@ -33,16 +34,28 @@ class ApplicationFactory
                                                                   'clientSecret'      => $config['oauth']['client_secret'],
                                                                   'redirectUri'       => $config['oauth']['redirect_uri'],
                                                               ]);
-        $repo = $em->getRepository('App:Oauth2RefreshToken');
-        $refreshToken = $repo->findOneBySlug('xero');
-        $newAccessToken = $provider->getAccessToken('refresh_token', [
-            'refresh_token' => $refreshToken->getToken()
-        ]);
 
-        $refreshToken->setToken($newAccessToken->getRefreshToken());
-        $em->flush($refreshToken);
-        $tenants = $provider->getTenants($newAccessToken);
+        $sql = "SELECT * FROM oauth2refresh_token WHERE slug = 'xero'";
+        $stmt = $em->getConnection()->prepare($sql);
+        $stmt->execute();
+        $token_row = $stmt->fetch();
+        $refreshToken = $token_row['token'];
+        try {
+            $newAccessToken = $provider->getAccessToken('refresh_token', [
+                'refresh_token' => $refreshToken
+            ]);
 
-        return new Application($newAccessToken->getToken(), $tenants[0]->tenantId);
+            $sql = "UPDATE oauth2refresh_token SET token = :token, updated_at = NOW() WHERE slug = 'xero'";
+            $stmt = $em->getConnection()->prepare($sql);
+            $stmt->bindValue('token', $newAccessToken->getRefreshToken());
+            $stmt->execute();
+            $tenants = $provider->getTenants($newAccessToken);
+            return new Application($newAccessToken->getToken(), $tenants[0]->tenantId);
+        } catch (XeroProviderException $e) {
+            return new Application('', '');
+        }
+
+
+
     }
 }
